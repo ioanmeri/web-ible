@@ -12,6 +12,10 @@
 - UFW
 - Nginx
 - PostgreSQL
+- Nodejs
+- npm
+- ElasticSearch
+- pm2
 
 ### Desktop Clients
 
@@ -42,11 +46,27 @@
 - [3.3 Create the Production Database](#33-create-the-production-database)
 - [3.4 Set password for the ident user](#34-set-password-for-the-ident-user)
 
-[4. Dbeaver DB Client Setup](#4-dbeaver-db-client-setup)
+[4. Dbeaver DB Client](#4-dbeaver-db-client)
 
 - [4.1 Remote connection](#41-remote-connection)
 - [4.2 Configure SSH tunnel](#42-configure-ssh-tunnel)
 - [4.3 Specify DB details](#43-specify-db-details)
+
+[5. Node.js and npm](#5-nodejs-and-npm)
+
+- [5.1 Install Node.js](#51-install-nodejs)
+- [5.2 Install npm](#51-install-npm)
+
+[6. Elastic Search](#6-elastic-search)
+
+- [6.1 Install OpenJDK 11](#61-install-openjdk-11)
+- [6.2 Install Elasticsearch](#62-install-elasticsearch)
+- [6.3 Configure Elasticsearch](#63-configure-elasticsearch)
+- [6.4 Create the application index](#64-create-the-application-index)
+
+[7. pm2 Node.js process manager](#7-pm2-nodejs-process-manager)
+
+- [7.1 Install pm2](#71-install-pm2)
 
 ## References
 
@@ -54,6 +74,9 @@
 - [https://www.digitalocean.com/community/tutorials/how-to-install-nginx-on-ubuntu-20-04](https://www.digitalocean.com/community/tutorials/how-to-install-nginx-on-ubuntu-20-04)
 - [https://www.digitalocean.com/community/tutorials/how-to-install-postgresql-on-ubuntu-20-04-quickstart](https://www.digitalocean.com/community/tutorials/how-to-install-postgresql-on-ubuntu-20-04-quickstart)
 - [https://github.com/dbeaver/dbeaver/issues/17537](https://github.com/dbeaver/dbeaver/issues/17537)
+- [https://www.digitalocean.com/community/tutorials/how-to-install-node-js-on-ubuntu-20-04](https://www.digitalocean.com/community/tutorials/how-to-install-node-js-on-ubuntu-20-04)
+- [https://www.digitalocean.com/community/tutorials/how-to-install-java-with-apt-on-ubuntu-22-04](https://www.digitalocean.com/community/tutorials/how-to-install-java-with-apt-on-ubuntu-22-04)
+- [https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-elasticsearch-on-ubuntu-20-04](https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-elasticsearch-on-ubuntu-20-04)
 
 # 1. Initial Server Setup
 
@@ -388,7 +411,7 @@ the password is required for the authentication of the Dbeaver connection
 
 ---
 
-# 4. Dbeaver DB Client Setup
+# 4. Dbeaver DB Client
 
 ## 4.1 Remote connection
 
@@ -443,6 +466,172 @@ In the Main tab of the Dbeaver connection:
 
 - Username: `ioannis`
 - Password: `********` (The use that was set in step 3.4)
+
+[Contents](#contents)
+
+---
+
+# 5. Node.js and npm
+
+## 5.1 Install Node.js
+
+1. Refresh your local package index
+
+```
+sudo apt update
+```
+
+2. Install Node.js
+
+```
+sudo apt install nodejs
+```
+
+3. Check installed node version
+
+```
+node -v
+```
+
+---
+
+## 5.2 Install npm
+
+1. Install Node.js package manager
+
+```
+sudo apt install npm
+```
+
+[Contents](#contents)
+
+---
+
+# 6. Elastic Search
+
+## 6.1 Install OpenJDK 11
+
+1. Execute the following command to install the JRE from OpenJDK 11
+
+```
+sudo apt install default-jre
+```
+
+2. Verify the installation with
+
+```
+java -version
+```
+
+---
+
+## 6.2 Install Elasticsearch
+
+1. Import the Elasticsearch public GPG key into APT with cURL
+
+```
+curl -fsSL https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -
+```
+
+2. Add the Elastic source list to the `sources.list.d` directory
+
+```
+echo "deb https://artifacts.elastic.co/packages/7.x/apt stable main" | sudo tee -a /etc/apt/sources.list.d/elastic-7.x.list
+```
+
+3. Update your package lists so APT will read the new Elastic source
+
+```
+sudo apt update
+```
+
+4. Install Elasticsearch
+
+```
+sudo apt install elasticsearch
+```
+
+---
+
+## 6.3 Configure Elasticsearch
+
+Restrict outside access by:
+
+1. Open config file
+
+```
+sudo nano /etc/elasticsearch/elasticsearch.yml
+```
+
+2. Update `network.host`
+
+```
+network.host: localhost
+```
+
+3. Start the Elasticsearch service
+
+```
+sudo systemctl start elasticsearch
+```
+
+4. Enable Elasticsearch to start up on server boot
+
+```
+sudo systemctl enable elasticsearch
+```
+
+5. Test Elasticsearch is listening
+
+```
+curl http://localhost:9200/
+```
+
+---
+
+## 6.4 Create the application index
+
+For the purposes of this app, we need a mapping on `filter_suggest` of type **search_as_you_type**
+
+1. Create the index `exhibits` with `filter_suggest` mappings
+
+```
+curl -X PUT -H "Content-Type: application/json" -d '{
+    "mappings": {
+        "properties": {
+            "filter_suggest": {
+                "type": "search_as_you_type"
+            }
+        }
+    }
+}' "http://localhost:9200/exhibits"
+```
+
+2. Check created index
+
+```
+curl http://localhost:9200/_cat/indices
+```
+
+[Contents](#contents)
+
+---
+
+# 7. pm2 Node.js process manager
+
+## 7.1 Install pm2
+
+1. Install PM2 by typing the following at the command line
+
+```
+sudo npm install pm2 -g
+```
+
+2. Run the app with pm2
+
+```
+pm2 start app.js -i 0
+```
 
 [Contents](#contents)
 
