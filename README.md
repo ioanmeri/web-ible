@@ -38,6 +38,7 @@
 - [2.3 Check your Web Server](#23-check-your-web-server)
 - [2.4 Nginx Process management](#24-nginx-process-management)
 - [2.5 Modify default server block to proxy API requests](#25-modify-default-server-block-to-proxy-api-requests)
+- [2.6 Set up Server Blocks](#26-set-up-server-blocks)
 
 [3. PostgreSQL Database](#3-postgresql-database)
 
@@ -319,6 +320,114 @@ http://207.154.205.22/api
 ```
 
 expect a 502 Bad Gateway response (instead of 404)
+
+---
+
+## 2.6 Set up Server Blocks
+
+1. Create `/var/www` directory for admin
+
+```
+sudo mkdir -p /var/www/admin.mistymap.com/html
+```
+
+2. Assign ownership of the directory with the $USER environment variable
+
+```
+sudo chown -R $USER:$USER /var/www/admin.mistymap.com/html
+```
+
+3. Allow the owner to read, write, and execute the files while granting only read and execute permissions to groups and others
+
+```
+sudo chmod -R 755 /var/www/app.mistymap.com
+```
+
+4. Create a sample `index.html`:
+
+```
+sudo nano /var/www/app.mistymap.com/html/index.html
+```
+
+```
+<html>
+    <head>
+        <title>Welcome to admin.mistymap.com!</title>
+    </head>
+    <body>
+        <h1>Success!  The admin.mistymap.com server block is working!</h1>
+    </body>
+</html>
+```
+
+5. Create a server block for the subdomain
+
+```
+sudo nano /etc/nginx/sites-available/admin.mistymap.com
+```
+
+```
+server {
+	listen 80;
+	listen [::]:80;
+
+	#  Basic auth to block crawlers
+	auth_basic "Administrator’s Area";
+	auth_basic_user_file /etc/apache2/.htpasswd;
+
+	root /var/www/admin.mistymap.com/html;
+	index index.html index.htm index.nginx-debian.html;
+
+	server_name admin.mistymap.com www.admin.mistymap.com;
+
+	location /api {
+		proxy_pass http://localhost:5000;
+		proxy_http_version 1.1;
+		proxy_set_header Upgrade $http_upgrade;
+		proxy_set_header Connection 'upgrade';
+		proxy_set_header Host $host;
+		proxy_cache_bypass $http_upgrade;
+		proxy_set_header Access-Control-Allow-Origin *;
+	}
+
+	location / {
+		# React router index.html response
+		try_files $uri /index.html;
+	}
+}
+```
+
+6. Enable the file by creating a link from it to the `sites-enabled` directory,
+
+```
+sudo ln -s /etc/nginx/sites-available/admin.mistymap.com /etc/nginx/sites-enabled/
+```
+
+7. Avoid hash bucket memory problem
+
+Adjust the value in `/etc/nginx/nginx.conf`
+
+```
+sudo nano /etc/nginx/nginx.conf
+```
+
+and uncomment
+
+```
+server_names_hash_bucket_size 64;
+```
+
+8. Test nginx files syntax
+
+```
+sudo nginx -t
+```
+
+9. Rest nginx
+
+```
+sudo systemctl restart nginx
+```
 
 [Contents](#contents)
 
