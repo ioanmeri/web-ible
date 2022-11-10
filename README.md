@@ -4,6 +4,8 @@
 
 - An Ubuntu 22.10 server with 4GB RAM and 2 CPUs.
 - An Ubuntu Desktop to connect to server
+- A domain name
+- github repos
 
 ## Technology Stack
 
@@ -39,6 +41,7 @@
 - [2.4 Nginx Process management](#24-nginx-process-management)
 - [2.5 Modify default server block to proxy API requests](#25-modify-default-server-block-to-proxy-api-requests)
 - [2.6 Set up Server Blocks](#26-set-up-server-blocks)
+- [2.7 Nginx configurations](#27-nginx-configurations)
 
 [3. PostgreSQL Database](#3-postgresql-database)
 
@@ -46,6 +49,7 @@
 - [3.2 Create a New Role](#32-create-a-new-role)
 - [3.3 Create the Production Database](#33-create-the-production-database)
 - [3.4 Set password for the ident user](#34-set-password-for-the-ident-user)
+- [3.5 Backup and restore Production Database](##35-backup-and-restore-production-database)
 
 [4. Dbeaver DB Client](#4-dbeaver-db-client)
 
@@ -56,7 +60,8 @@
 [5. Node.js and npm](#5-nodejs-and-npm)
 
 - [5.1 Install Node.js](#51-install-nodejs)
-- [5.2 Install npm](#51-install-npm)
+- [5.2 Install npm](#52-install-npm)
+- [5.3 Set Node.js NODE_ENV](#53-set-nodejs-node_env)
 
 [6. Elastic Search](#6-elastic-search)
 
@@ -64,10 +69,23 @@
 - [6.2 Install Elasticsearch](#62-install-elasticsearch)
 - [6.3 Configure Elasticsearch](#63-configure-elasticsearch)
 - [6.4 Create the application index](#64-create-the-application-index)
+- [6.5 Elasticsearch API](#65-elasticsearch-api)
 
 [7. pm2 Node.js process manager](#7-pm2-nodejs-process-manager)
 
 - [7.1 Install pm2](#71-install-pm2)
+
+### Add
+
+- DNS setup in amazon
+- workflows for CI/CD
+- server blocks for subdomain
+- environment variable substitution
+
+- add all .env in .bash_profile
+- also for config.json
+
+- nginx basic auth
 
 ## References
 
@@ -429,9 +447,26 @@ sudo nginx -t
 sudo systemctl restart nginx
 ```
 
-[Contents](#contents)
-
 ---
+
+# 2.7 Nginx configurations
+
+1. Increase file size to upload. 413 – Request Entity Too Large Error and Solution
+
+- Open `nginx.conf`
+
+```
+sudo nano /etc/nginx/nginx.conf
+```
+
+- Add the following line to http or server or location context to increase the size limit in nginx.conf, enter:
+
+```
+# set client body size to 2M #
+client_max_body_size 2M;
+```
+
+## [Contents](#contents)
 
 # 3. PostgreSQL Database
 
@@ -515,6 +550,24 @@ ALTER USER ioannis WITH PASSWORD '********';
 ```
 
 the password is required for the authentication of the Dbeaver connection
+
+---
+
+## 3.5 Backup and restore Production Database
+
+1. SSH into server and create dump
+
+```
+pg_dump -U ioannis -f mistymap_production.dump mistymap_production -Fc
+```
+
+2. Download database locally
+
+3. Restore database
+
+```
+pg_restore -U user -d mistymap_development -1 mistymap_production.dump
+```
 
 [Contents](#contents)
 
@@ -610,6 +663,28 @@ node -v
 
 ```
 sudo apt install npm
+```
+
+## 5.3 Set Node.js NODE_ENV
+
+1. Add the NODE_ENV in `bash_profile`
+
+In `~/.bash_profile` add the line:
+
+```
+export NODE_ENV="production"
+```
+
+2. Source the file to enable env
+
+```
+source ~/.bash_profile
+```
+
+3. Test NODE_ENV env is enabled
+
+```
+printenv NODE_ENV
 ```
 
 [Contents](#contents)
@@ -720,6 +795,43 @@ curl -X PUT -H "Content-Type: application/json" -d '{
 
 ```
 curl http://localhost:9200/_cat/indices
+```
+
+## 6.5 Elasticsearch API
+
+1. Delete an index
+
+```
+curl -X DELETE http://localhost:9200/exhibits -H "Accept: application/json"
+```
+
+2. Search for a document with the current index
+
+```
+curl -X POST -H "Content-Type: application/json" \
+    -d '{
+        "query": {
+            "multi_match": {
+                "query": "a",
+                "type": "bool_prefix",
+                "fields": [
+                    "title",
+                    "subtitle",
+                    "filter_suggest",
+                    "filter_suggest._2gram",
+                    "filter_suggest._3gram"
+                ],
+                "operator": "and"
+            }
+        }
+    }' \
+    http://localhost:9200/exhibits/_search
+```
+
+3. Get all documents in index
+
+```
+curl http://localhost:9200/exhibits/_search
 ```
 
 [Contents](#contents)
