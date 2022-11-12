@@ -50,6 +50,7 @@
 - [3.3 Create the Production Database](#33-create-the-production-database)
 - [3.4 Set password for the ident user](#34-set-password-for-the-ident-user)
 - [3.5 Backup and restore Production Database](##35-backup-and-restore-production-database)
+- [3.6 Shell script to restore production database locally](##36-shell-script-to-restore-production-database-locally)
 
 [4. Dbeaver DB Client](#4-dbeaver-db-client)
 
@@ -567,6 +568,35 @@ pg_dump -U ioannis -f mistymap_production.dump mistymap_production -Fc
 
 ```
 pg_restore -U user -d mistymap_development -1 mistymap_production.dump
+```
+
+---
+
+## 3.6 Shell script to restore production database locally
+
+TODO: change default port
+
+File: `db_restore.sh`
+
+```
+echo "---------- Connect to server ----------";
+ssh -i ~/.ssh/id_rsa_do_mistymap ioannis@207.154.205.22 << EOF
+pwd;
+whoami;
+rm -f mistymap_production.dump;
+echo "---------- Dump production database ----------";
+pg_dump -U ioannis -f mistymap_production.dump mistymap_production -Fc;
+EOF
+pwd;
+whoami;
+echo "---------- Clone production database locally ----------";
+rm -f mistymap_production.dump;
+rsync -chavzP -e "ssh -p 22" ioannis@207.154.205.22:/home/ioannis/mistymap_production.dump /home/user/Documents/Scripts;
+echo "---------- Drop and restore database ----------";
+sudo -u postgres dropdb --if-exists 'mistymap_development';
+sudo -u postgres createdb 'mistymap_development';
+pg_restore -U user -d mistymap_development -1 mistymap_production.dump
+echo "---------- Completed successfully ----------";
 ```
 
 [Contents](#contents)
