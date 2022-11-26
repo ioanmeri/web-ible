@@ -49,8 +49,8 @@
 - [3.2 Create a New Role](#32-create-a-new-role)
 - [3.3 Create the Production Database](#33-create-the-production-database)
 - [3.4 Set password for the ident user](#34-set-password-for-the-ident-user)
-- [3.5 Backup and restore Production Database](##35-backup-and-restore-production-database)
-- [3.6 Shell script to restore production database locally](##36-shell-script-to-restore-production-database-locally)
+- [3.5 Backup and restore Production Database](#35-backup-and-restore-production-database)
+- [3.6 Shell script to restore production database locally](#36-shell-script-to-restore-production-database-locally)
 
 [4. Dbeaver DB Client](#4-dbeaver-db-client)
 
@@ -75,6 +75,10 @@
 [7. pm2 Node.js process manager](#7-pm2-nodejs-process-manager)
 
 - [7.1 Install pm2](#71-install-pm2)
+
+[8. Network](#8-network)
+
+- [8.1 Testing speed](#81-testing-speed)
 
 ### Add
 
@@ -887,3 +891,41 @@ pm2 start app.js -i 0
 [Contents](#contents)
 
 ---
+
+# 8 network
+
+## 8.1 Testing speed
+
+**Ask curl how long tcp connect takes**
+
+```
+seq 5 | xargs -I@ -n1 curl -so /dev/null -w "%{time_connect}\n" https://farmair.io
+```
+
+- The curl command with the `-o /dev/null` option can be used to suppress the response body output.
+
+- If you also want to suppress the progress bar, the `-s` or `--silent` flag can be used.
+
+- `--write-out` or just `-w` for short, outputs text and information after a transfer is completed.
+
+**What about when using SSL? Let's ask curl again:**
+
+```
+curl -kso /dev/null -w "tcp:%{time_connect}, ssldone:%{time_appconnect}\n" https://mistymap.com
+```
+
+Another way:
+
+**First configure the output format for cURL in ~/.curlrc:**
+
+`cat .curlrc`
+
+```
+-w "dnslookup: %{time_namelookup} | connect: %{time_connect} | appconnect: %{time_appconnect} | pretransfer: %{time_pretransfer} | starttransfer: %{time_starttransfer} | total: %{time_total} | size: %{size_download}\n"
+```
+
+and:
+
+```
+curl -so /dev/null https://mistymap.com
+```
