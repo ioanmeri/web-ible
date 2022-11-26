@@ -80,6 +80,10 @@
 
 - [8.1 Testing speed](#81-testing-speed)
 
+[9. Shortcuts](#9-shortcuts)
+
+- [9.1 Bashrc](##91-bashrc)
+
 ### Add
 
 - DNS setup in amazon
@@ -929,3 +933,19 @@ and:
 ```
 curl -so /dev/null https://mistymap.com
 ```
+
+[Contents](#contents)
+
+# 9. Shortcuts
+
+## 9.1 bashrc
+
+Some shortcuts in bashrc:
+
+- Bind remote port and local to link elastic search dev environment to production
+
+```
+alias mm_es="ssh -L 9200:localhost:9200 ioannis@207.154.205.22"
+```
+
+---
