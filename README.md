@@ -84,6 +84,10 @@
 
 - [9.1 Bashrc](##91-bashrc)
 
+[10. Sequelize ORM](#10-sequelize-orm)
+
+- [10.1 Add DB Table Field](##101-add-db-table-field)
+
 ### Add
 
 - DNS setup in amazon
@@ -949,3 +953,51 @@ alias mm_es="ssh -L 9200:localhost:9200 ioannis@207.154.205.22"
 ```
 
 ---
+
+# 10 Sequelize ORM
+
+## 10.1 Add DB Table Field
+
+1. Create a migration file with `sequelize-cli`
+
+- move to folder `api/server` and run
+
+```
+../node_modules/.bin/sequelize migration:generate --name add-couponId-to-orders
+```
+
+2. Add Login to add/revert column
+
+- add column with association
+
+```
+'use strict';
+
+module.exports = {
+  up: (queryInterface, Sequelize) => {
+    return queryInterface.addColumn(
+      'Orders', // name of Source model
+      'couponId', // name of the key we're adding
+      {
+        type: Sequelize.INTEGER,
+        references: {
+          model: 'Coupons', // name of Target model
+          key: 'id', // key in Target model that we're referencing
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL',
+      }
+    );
+  },
+
+  down: (queryInterface, Sequelize) => {
+    return queryInterface.removeColumn(
+      'Orders', // name of Source model
+      'couponId' // key we want to remove
+    );
+  }
+};
+
+```
+
+[Contents](#contents)
