@@ -86,7 +86,7 @@
 
 [10. Sequelize ORM](#10-sequelize-orm)
 
-- [10.1 Add DB Table Field](##101-add-db-table-field)
+- [10.1 Add DB Table Field](#101-add-db-table-field)
 
 ### Add
 
@@ -998,6 +998,12 @@ module.exports = {
   }
 };
 
+```
+
+3. Run the migration
+
+```
+../node_modules/.bin/sequelize db:migrate
 ```
 
 [Contents](#contents)
