@@ -1006,4 +1006,16 @@ module.exports = {
 ../node_modules/.bin/sequelize db:migrate
 ```
 
+4. Undo a migration
+
+```
+../node_modules/.bin/sequelize db:migrate:undo
+```
+
+or revert back to a specific migration by passing its name with the --to option
+
+```
+../node_modules/.bin/sequelize db:migrate:undo:all --to XXXXXXXXXXXXXX-create-posts.js
+```
+
 [Contents](#contents)
