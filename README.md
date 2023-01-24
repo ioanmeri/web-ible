@@ -88,6 +88,10 @@
 
 - [10.1 Add DB Table Field](#101-add-db-table-field)
 
+[11. CI / CD](#11-ci-cd)
+
+- [11.1 Github workflows](#111-github-workflows)
+
 ### Add
 
 - DNS setup in amazon
@@ -1019,3 +1023,42 @@ or revert back to a specific migration by passing its name with the --to option
 ```
 
 [Contents](#contents)
+
+# 11. CI / CD
+
+## 11.1 Github workflows
+
+**Example of github continues integration yml**
+
+```
+name: Build & Deploy
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: "npm"
+      - run: npm install
+      - run: npm run build
+        env:
+          CI: false
+
+      - name: Install SSH Key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.SSH_KEY }}
+          known_hosts: unnecessary
+
+      - name: Adding Known Hosts
+        run: ssh-keyscan -p 22 -H ${{ secrets.SSH_HOST }}  >> ~/.ssh/known_hosts
+
+      - name: Deploy with rsync
+        run: rsync -avz -e "ssh -p 22" ./build/ ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:/var/www/mistymap.com/html/
+```
